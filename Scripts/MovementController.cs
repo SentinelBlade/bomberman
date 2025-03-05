@@ -16,10 +16,18 @@ public class MovementController : MonoBehaviour
     public AnimatedSpriteRenderer spriteRendererRight;
     public AnimatedSpriteRenderer spriteDeath;
     private AnimatedSpriteRenderer activeSpriteRenderer;
+
+    private Vector3 startingPosition;
+
+    public int lives = 3; // Add lives
+    public GameObject gameOverUI;
+    public PlayerLivesUI playerLivesUI;
+    public GameManager gameManager;
     private void Awake()
     {
         rigidBody = GetComponent<Rigidbody2D>();
         activeSpriteRenderer = spriteRendererDown;
+        startingPosition = transform.position;
     }
 
     private void Update()
@@ -67,10 +75,12 @@ public class MovementController : MonoBehaviour
     {
         if (collision.gameObject.layer == LayerMask.NameToLayer("Explosion")){
             DeathSequence();
+            gameManager.LoseLife(gameObject);
         }
     }
 
-    private void DeathSequence()
+    
+    public void DeathSequence()
     {
         enabled = false; //disables MovementController
 
@@ -83,13 +93,36 @@ public class MovementController : MonoBehaviour
 
         spriteDeath.enabled = true;
 
-        Invoke(nameof(OnDeathSequenceEnded), 1.25f);
+        if (lives > 0)
+        {
+            Invoke(nameof(Respawn), 1.25f); // Respawn after a delay if lives are greater than 0
+        }
+        else
+        {
+            Invoke(nameof(OnDeathSequenceEnded), 1.25f); // Call OnDeathSequenceEnded if no lives left
+        }
     }
 
     private void OnDeathSequenceEnded()
     {
         gameObject.SetActive(false);
         FindObjectOfType<GameManager>().CheckWinState();
+    }
+    public void Respawn()
+    {
+        // Reset player position or other respawn logic
+        transform.position = startingPosition;
+        enabled = true;
+        GetComponent<BombController>().enabled = true;
+        spriteDeath.enabled = false;
+        spriteRendererDown.enabled = true; // Set initial sprite renderer
+        activeSpriteRenderer = spriteRendererDown;
+    }
+        private void GameOver()
+    {
+        enabled = false;
+        GetComponent<BombController>().enabled = false;
+        gameOverUI.SetActive(true); // Show Game Over UI
     }
 
 }
